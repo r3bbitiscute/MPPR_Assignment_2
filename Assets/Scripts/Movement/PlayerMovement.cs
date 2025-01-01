@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -13,6 +14,10 @@ public class PlayerMovement : MonoBehaviour
     public float jumpCooldown;
     public float airMultiplier;
     private bool readyToJump = true;
+    [HideInInspector] public bool freeze;
+    [HideInInspector] public bool activeGrapple;
+    private Vector3 velocityToSet;
+    private bool enableMovementOnNextTouch;
 
     [Header("Ground Check")]
     public float playerHeight;
@@ -42,13 +47,18 @@ public class PlayerMovement : MonoBehaviour
         MovementInput();
 
         //Ground Drag
-        if (isGrounded)
+        if (isGrounded && !activeGrapple)
         {
             rb.drag = groundDrag;
         }
         else
         {
             rb.drag = 0;
+        }
+
+        if (freeze)
+        {
+            rb.velocity = Vector3.zero;
         }
     }
 
@@ -79,6 +89,8 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void Move()
     {
+        if (activeGrapple) return;
+
         // Giving direction based on player input
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
@@ -102,8 +114,50 @@ public class PlayerMovement : MonoBehaviour
         rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
     }
 
+    public void JumpToPosition(Vector3 targetPosition, float trajectoryHeight)
+    {
+        activeGrapple = true;
+        velocityToSet = CalculateJumpVelocity(transform.position, targetPosition, trajectoryHeight);
+        Invoke(nameof(SetVelocity), 0.1f);
+    }
+
+    private void SetVelocity()
+    {
+        enableMovementOnNextTouch = true;
+        rb.velocity = velocityToSet;
+    }
+
     private void ResetJump()
     {
         readyToJump = true;
+    }
+
+    public Vector3 CalculateJumpVelocity(Vector3 startPoint, Vector3 endPoint, float trajectoryHeight)
+    {
+        float gravity = Physics.gravity.y;
+        float displacementY = endPoint.y - startPoint.y;
+        Vector3 displacementXZ = new Vector3(endPoint.x - startPoint.x, 0f, endPoint.z - startPoint.z);
+
+        Vector3 velocityY = Vector3.up * Mathf.Sqrt(-2 * gravity * trajectoryHeight);
+        Vector3 velocityXZ = displacementXZ / (Mathf.Sqrt(-2 * trajectoryHeight / gravity)
+            + Mathf.Sqrt(2 * (displacementY - trajectoryHeight) / gravity));
+
+        return velocityXZ + velocityY;
+    }
+
+    public void ResetRestriction()
+    {
+        activeGrapple = false;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (enableMovementOnNextTouch)
+        {
+            enableMovementOnNextTouch = false;
+            ResetRestriction();
+
+            GetComponent<Grappling>().StopGrapple();
+        }
     }
 }
