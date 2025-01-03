@@ -5,9 +5,14 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
+    [Header("References")]
     public Transform orientation;
+    private Rigidbody rb;
 
     [Header("Movement")]
+    private float horizontalInput;
+    private float verticalInput;
+    Vector3 moveDirection;
     public float movementSpeed;
     public float groundDrag;
     public float jumpForce;
@@ -24,27 +29,18 @@ public class PlayerMovement : MonoBehaviour
     public LayerMask groundLayer;
     private bool isGrounded;
 
-    private float horizontalInput;
-    private float verticalInput;
-
-    Vector3 moveDirection;
-
-    private Rigidbody rb;
-
-
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true;
+        rb.freezeRotation = true; // Freeze rotation to ensure player doesn't flip
     }
-
 
     private void Update()
     {
-        // Ground Check
+        // Ground Check using raycast
         isGrounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, groundLayer);
 
-        MovementInput();
+        MovementInput(); // Taking inputs
 
         //Ground Drag
         if (isGrounded && !activeGrapple)
@@ -56,15 +52,13 @@ public class PlayerMovement : MonoBehaviour
             rb.drag = 0;
         }
 
-        if (freeze)
-        {
-            rb.velocity = Vector3.zero;
-        }
+        //Freeze Player
+        if (freeze) rb.velocity = Vector3.zero;
     }
 
     private void FixedUpdate()
     {
-        Move();
+        Move(); // Move the player
     }
 
 
@@ -80,7 +74,7 @@ public class PlayerMovement : MonoBehaviour
         {
             readyToJump = false;
             Jump();
-            Invoke(nameof(ResetJump), jumpCooldown);
+            Invoke(nameof(ResetJump), jumpCooldown); // Applying cooldown to jump
         }
     }
 
@@ -89,12 +83,12 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void Move()
     {
-        if (activeGrapple) return;
+        if (activeGrapple) return; // Return if user are grappling
 
         // Giving direction based on player input
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
-        // Moving player
+        // Moving player (Applying force)
         if (isGrounded)
         {
             rb.AddForce(moveDirection.normalized * movementSpeed * 10f, ForceMode.Force);
@@ -108,10 +102,13 @@ public class PlayerMovement : MonoBehaviour
 
     private void Jump()
     {
-        // Reset y velocity
-        rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+        rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z); // Reset vertical velocity
+        rb.AddForce(transform.up * jumpForce, ForceMode.Impulse); // Apply jump force
+    }
 
-        rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
+    private void ResetJump()
+    {
+        readyToJump = true;
     }
 
     public void JumpToPosition(Vector3 targetPosition, float trajectoryHeight)
@@ -125,11 +122,6 @@ public class PlayerMovement : MonoBehaviour
     {
         enableMovementOnNextTouch = true;
         rb.velocity = velocityToSet;
-    }
-
-    private void ResetJump()
-    {
-        readyToJump = true;
     }
 
     public Vector3 CalculateJumpVelocity(Vector3 startPoint, Vector3 endPoint, float trajectoryHeight)
