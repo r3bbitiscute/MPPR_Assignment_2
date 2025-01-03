@@ -135,13 +135,17 @@ public class PlayerMovement : MonoBehaviour
     // Apply force by using parabolic trajectory formula
     public Vector3 CalculateJumpVelocity(Vector3 startPoint, Vector3 endPoint, float trajectoryHeight)
     {
-        float gravity = Physics.gravity.y;
-        float displacementY = endPoint.y - startPoint.y;
-        Vector3 displacementXZ = new Vector3(endPoint.x - startPoint.x, 0f, endPoint.z - startPoint.z);
+        float gravity = Physics.gravity.y; // Get gravity
+        float displacementY = endPoint.y - startPoint.y; // Calculate vertical displacement between player and grapple point
+        Vector3 displacementXZ = new Vector3(endPoint.x - startPoint.x, 0f, endPoint.z - startPoint.z); // Calculate horizontal displacement between player and grapple point
 
+        // Use v^2 = u^2 + 2as (0 = u upward ^2 + (2 * gravity * height)) to calculate the upward force (u upward)
         Vector3 velocityY = Vector3.up * Mathf.Sqrt(-2 * gravity * trajectoryHeight);
-        Vector3 velocityXZ = displacementXZ / (Mathf.Sqrt(-2 * trajectoryHeight / gravity)
-            + Mathf.Sqrt(2 * (displacementY - trajectoryHeight) / gravity));
+
+        /* Use s = ut + (at^2) / 2 (displacement = u horizontal * (time up + time down) + (0 * (time up + time down)^2) / 2)
+        *  to calculate the horizontal force (u horizontal)
+        */
+        Vector3 velocityXZ = displacementXZ / (Mathf.Sqrt(-2 * trajectoryHeight / gravity) + Mathf.Sqrt(2 * (displacementY - trajectoryHeight) / gravity));
 
         return velocityXZ + velocityY;
     }
