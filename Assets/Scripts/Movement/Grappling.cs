@@ -91,11 +91,12 @@ public class Grappling : MonoBehaviour
     {
         playerMovement.freeze = false; // Unfreeze player movement
 
-        // Calculate highest point on arc
+        // Calculate a point lower then the actual grapple point to perform a smoother jump (helps to avoid a straight movement)
         Vector3 lowestPoint = new Vector3(transform.position.x, transform.position.y - 1f, transform.position.z);
         float grapplePointRelativeYPos = grapplePoint.y - lowestPoint.y;
-        float highestPointOnArc = grapplePointRelativeYPos + overshootYAxis;
 
+        // Calculate the vertical offset between the player and the grapple point and apply an overshoot force to create a smoother arc
+        float highestPointOnArc = grapplePointRelativeYPos + overshootYAxis;
         if (grapplePointRelativeYPos < 0) highestPointOnArc = overshootYAxis;
 
         playerMovement.JumpToPosition(grapplePoint, highestPointOnArc); // Move player to grapple point

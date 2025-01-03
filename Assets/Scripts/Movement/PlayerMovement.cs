@@ -22,7 +22,7 @@ public class PlayerMovement : MonoBehaviour
     [HideInInspector] public bool freeze;
     [HideInInspector] public bool activeGrapple;
     private Vector3 velocityToSet;
-    private bool enableMovementOnNextTouch;
+    private bool enableMovement;
 
     [Header("Ground Check")]
     public float playerHeight;
@@ -108,9 +108,14 @@ public class PlayerMovement : MonoBehaviour
 
     private void ResetJump()
     {
-        readyToJump = true;
+        readyToJump = true; // Reset jump
     }
 
+    /// <summary>
+    /// Initiates a jump towards the target position following a parabolic trajectory.
+    /// </summary>
+    /// <param name="targetPosition">The target position</param>
+    /// <param name="trajectoryHeight">The height of the arc</param>
     public void JumpToPosition(Vector3 targetPosition, float trajectoryHeight)
     {
         activeGrapple = true;
@@ -118,12 +123,16 @@ public class PlayerMovement : MonoBehaviour
         Invoke(nameof(SetVelocity), 0.1f);
     }
 
+    /// <summary>
+    /// Sets the velocity of the rigidbody to the precalculated jump velocity.
+    /// </summary>
     private void SetVelocity()
     {
-        enableMovementOnNextTouch = true;
+        enableMovement = true;
         rb.velocity = velocityToSet;
     }
 
+    // Apply force by using parabolic trajectory formula
     public Vector3 CalculateJumpVelocity(Vector3 startPoint, Vector3 endPoint, float trajectoryHeight)
     {
         float gravity = Physics.gravity.y;
@@ -137,17 +146,13 @@ public class PlayerMovement : MonoBehaviour
         return velocityXZ + velocityY;
     }
 
-    public void ResetRestriction()
-    {
-        activeGrapple = false;
-    }
-
     private void OnCollisionEnter(Collision collision)
     {
-        if (enableMovementOnNextTouch)
+        // Enable user to move again and stop grappling
+        if (enableMovement)
         {
-            enableMovementOnNextTouch = false;
-            ResetRestriction();
+            enableMovement = false;
+            activeGrapple = false;
 
             GetComponent<Grappling>().StopGrapple();
         }
