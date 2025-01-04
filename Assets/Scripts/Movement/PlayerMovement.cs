@@ -18,9 +18,11 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce;
     public float jumpCooldown;
     public float airMultiplier;
+    public float swingSpeed;
     private bool readyToJump = true;
     [HideInInspector] public bool freeze;
     [HideInInspector] public bool activeGrapple;
+    [HideInInspector] public bool swinging;
     private Vector3 velocityToSet;
     private bool enableMovement;
 
@@ -84,6 +86,7 @@ public class PlayerMovement : MonoBehaviour
     private void Move()
     {
         if (activeGrapple) return; // Return if user are grappling
+        if(swinging) return;
 
         // Giving direction based on player input
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
